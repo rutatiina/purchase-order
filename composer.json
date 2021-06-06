@@ -17,5 +17,12 @@
         "psr-4": {
             "Rutatiina\\PurchaseOrder\\": "src/"
         }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Rutatiina\\PurchaseOrder\\PurchaseOrderServiceProvider"
+            ]
+        }
     }
 }
