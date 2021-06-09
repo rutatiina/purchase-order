@@ -37,7 +37,6 @@ class PurchaseOrder extends Model
     protected $appends = [
         'number_string',
         'total_in_words',
-        'contact_id',
     ];
 
     /**
@@ -95,7 +94,6 @@ class PurchaseOrder extends Model
         $attributes['comments'] = [];
         $attributes['debit_contact'] = [];
         $attributes['credit_contact'] = [];
-        $attributes['recurring'] = [];
 
         return $attributes;
     }
@@ -116,36 +114,14 @@ class PurchaseOrder extends Model
         return ucfirst($f->format($this->total));
     }
 
-    public function getContactIdAttribute()
+    public function financial_account()
     {
-        if ($this->debit_contact_id == $this->credit_contact_id)
-        {
-            return $this->debit_contact_id;
-        }
-        else
-        {
-            return null;
-        }
-    }
-
-    public function debit_account()
-    {
-        return $this->hasOne('Rutatiina\FinancialAccounting\Models\Account', 'id', 'debit');
-    }
-
-    public function credit_account()
-    {
-        return $this->hasOne('Rutatiina\FinancialAccounting\Models\Account', 'id', 'credit');
+        return $this->hasOne('Rutatiina\FinancialAccounting\Models\Account', 'id', 'financial_account_code');
     }
 
     public function items()
     {
         return $this->hasMany('Rutatiina\PurchaseOrder\Models\PurchaseOrderItem', 'purchase_order_id')->orderBy('id', 'asc');
-    }
-
-    public function ledgers()
-    {
-        return $this->hasMany('Rutatiina\PurchaseOrder\Models\PurchaseOrderLedger', 'purchase_order_id')->orderBy('id', 'asc');
     }
 
     public function comments()
@@ -155,17 +131,7 @@ class PurchaseOrder extends Model
 
     public function contact()
     {
-        return $this->hasOne('Rutatiina\Contact\Models\Contact', 'id', 'debit_contact_id');
-    }
-
-    public function debit_contact()
-    {
-        return $this->hasOne('Rutatiina\Contact\Models\Contact', 'id', 'debit_contact_id');
-    }
-
-    public function credit_contact()
-    {
-        return $this->hasOne('Rutatiina\Contact\Models\Contact', 'id', 'credit_contact_id');
+        return $this->hasOne('Rutatiina\Contact\Models\Contact', 'id', 'contact_id');
     }
 
     public function item_taxes()

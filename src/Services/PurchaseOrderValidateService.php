@@ -30,7 +30,7 @@ class PurchaseOrderValidateService
             'contact_id' => 'required|numeric',
             'date' => 'required|date',
             'base_currency' => 'required',
-            'expiry_date' => 'date|nullable',
+            'delivery_date' => 'date|nullable',
             'contact_notes' => 'string|nullable',
 
             'items' => 'required|array',
@@ -85,7 +85,7 @@ class PurchaseOrderValidateService
         $data['salesperson_contact_id'] = $requestInstance->input('salesperson_contact_id', null);
         $data['branch_id'] = $requestInstance->input('branch_id', null);
         $data['store_id'] = $requestInstance->input('store_id', null);
-        $data['expiry_date'] = $requestInstance->input('expiry_date', null);
+        $data['delivery_date'] = $requestInstance->input('delivery_date', null);
         $data['terms_and_conditions'] = $requestInstance->input('terms_and_conditions', null);
         $data['contact_notes'] = $requestInstance->input('contact_notes', null);
         $data['status'] = $requestInstance->input('status', null);
@@ -126,8 +126,6 @@ class PurchaseOrderValidateService
                 'total' => $item['total'],
                 'taxable_amount' => $itemTaxableAmount,
                 'units' => $requestInstance->input('items.'.$key.'.units', null),
-                'batch' => $requestInstance->input('items.'.$key.'.batch', null),
-                'expiry' => $requestInstance->input('items.'.$key.'.expiry', null),
                 'taxes' => $itemTaxes,
             ];
         }
