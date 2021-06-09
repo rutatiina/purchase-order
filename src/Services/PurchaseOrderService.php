@@ -1,20 +1,18 @@
 <?php
 
-namespace Rutatiina\SalesOrder\Services;
+namespace Rutatiina\PurchaseOrder\Services;
 
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Rutatiina\SalesOrder\Models\SalesOrder;
-use Rutatiina\SalesOrder\Models\SalesOrderItem;
-use Rutatiina\SalesOrder\Models\SalesOrderItemTax;
+use Rutatiina\PurchaseOrder\Models\PurchaseOrder;
 use Rutatiina\FinancialAccounting\Services\AccountBalanceUpdateService;
 use Rutatiina\FinancialAccounting\Services\ContactBalanceUpdateService;
-use Rutatiina\SalesOrder\Models\Setting;
+use Rutatiina\PurchaseOrder\Models\Setting;
 use Rutatiina\Tax\Models\Tax;
 
-class SalesOrderService
+class PurchaseOrderService
 {
     public static $errors = [];
 
@@ -25,7 +23,7 @@ class SalesOrderService
 
     public static function nextNumber()
     {
-        $count = SalesOrder::count();
+        $count = PurchaseOrder::count();
         $settings = Setting::first();
 
         return $settings->number_prefix . (str_pad(($count + 1), $settings->minimum_number_length, "0", STR_PAD_LEFT)) . $settings->number_postfix;
@@ -35,7 +33,7 @@ class SalesOrderService
     {
         $taxes = Tax::all()->keyBy('code');
 
-        $txn = SalesOrder::findOrFail($id);
+        $txn = PurchaseOrder::findOrFail($id);
         $txn->load('contact', 'financial_account', 'items.taxes');
         $txn->setAppends(['taxes']);
 
@@ -81,11 +79,11 @@ class SalesOrderService
 
     public static function store($requestInstance)
     {
-        $data = ValidateService::run($requestInstance);
+        $data = PurchaseOrderValidateService::run($requestInstance);
         //print_r($data); exit;
         if ($data === false)
         {
-            self::$errors = ValidateService::$errors;
+            self::$errors = PurchaseOrderValidateService::$errors;
             return false;
         }
 
@@ -95,7 +93,7 @@ class SalesOrderService
 
         try
         {
-            $Txn = new SalesOrder;
+            $Txn = new PurchaseOrder;
             $Txn->tenant_id = $data['tenant_id'];
             $Txn->created_by = Auth::id();
             $Txn->document_name = $data['document_name'];
@@ -125,10 +123,10 @@ class SalesOrderService
             //print_r($data['items']); exit;
 
             //Save the items >> $data['items']
-            SalesOrderItemService::store($data);
+            PurchaseOrderItemService::store($data);
 
             //check status and update financial account and contact balances accordingly
-            ApprovalService::run($data);
+            PurchaseOrderApprovalService::run($data);
 
             DB::connection('tenant')->commit();
 
@@ -163,11 +161,11 @@ class SalesOrderService
 
     public static function update($requestInstance)
     {
-        $data = ValidateService::run($requestInstance);
+        $data = PurchaseOrderValidateService::run($requestInstance);
         //print_r($data); exit;
         if ($data === false)
         {
-            self::$errors = ValidateService::$errors;
+            self::$errors = PurchaseOrderValidateService::$errors;
             return false;
         }
 
@@ -176,7 +174,7 @@ class SalesOrderService
 
         try
         {
-            $Txn = SalesOrder::with('items')->findOrFail($data['id']);
+            $Txn = PurchaseOrder::with('items')->findOrFail($data['id']);
 
             if ($Txn->status == 'Approved')
             {
@@ -224,10 +222,10 @@ class SalesOrderService
             //print_r($data['items']); exit;
 
             //Save the items >> $data['items']
-            SalesOrderItemService::store($data);
+            PurchaseOrderItemService::store($data);
 
             //check status and update financial account and contact balances accordingly
-            ApprovalService::run($data);
+            PurchaseOrderApprovalService::run($data);
 
             DB::connection('tenant')->commit();
 
@@ -266,7 +264,7 @@ class SalesOrderService
 
         try
         {
-            $Txn = SalesOrder::findOrFail($id);
+            $Txn = PurchaseOrder::findOrFail($id);
 
             if ($Txn->status == 'Approved')
             {
@@ -321,7 +319,7 @@ class SalesOrderService
     {
         $taxes = Tax::all()->keyBy('code');
 
-        $txn = SalesOrder::findOrFail($id);
+        $txn = PurchaseOrder::findOrFail($id);
         $txn->load('contact', 'items.taxes');
         $txn->setAppends(['taxes']);
 
@@ -368,7 +366,7 @@ class SalesOrderService
 
     public static function approve($id)
     {
-        $Txn = SalesOrder::findOrFail($id);
+        $Txn = PurchaseOrder::findOrFail($id);
 
         if (strtolower($Txn->status) != 'draft')
         {
@@ -383,7 +381,7 @@ class SalesOrderService
 
         try
         {
-            ApprovalService::run($data);
+            PurchaseOrderApprovalService::run($data);
 
             //update the status of the txn
             $Txn->status = 'Approved';

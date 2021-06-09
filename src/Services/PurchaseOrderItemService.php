@@ -1,16 +1,11 @@
 <?php
 
-namespace Rutatiina\SalesOrder\Services;
+namespace Rutatiina\PurchaseOrder\Services;
 
-use Illuminate\Support\Facades\App;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Rutatiina\SalesOrder\Models\SalesOrder;
-use Rutatiina\SalesOrder\Models\SalesOrderItem;
-use Rutatiina\SalesOrder\Models\SalesOrderItemTax;
+use Rutatiina\PurchaseOrder\Models\PurchaseOrderItem;
+use Rutatiina\PurchaseOrder\Models\PurchaseOrderItemTax;
 
-class SalesOrderItemService
+class PurchaseOrderItemService
 {
     public static $errors = [];
 
@@ -31,12 +26,12 @@ class SalesOrderItemService
             $itemTaxes = (is_array($item['taxes'])) ? $item['taxes'] : [] ;
             unset($item['taxes']);
 
-            $itemModel = SalesOrderItem::create($item);
+            $itemModel = PurchaseOrderItem::create($item);
 
             foreach ($itemTaxes as $tax)
             {
                 //save the taxes attached to the item
-                $itemTax = new SalesOrderItemTax;
+                $itemTax = new PurchaseOrderItemTax;
                 $itemTax->tenant_id = $item['tenant_id'];
                 $itemTax->sales_order_id = $item['sales_order_id'];
                 $itemTax->sales_order_item_id = $itemModel->id;

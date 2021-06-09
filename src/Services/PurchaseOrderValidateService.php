@@ -1,12 +1,12 @@
 <?php
 
-namespace Rutatiina\SalesOrder\Services;
+namespace Rutatiina\PurchaseOrder\Services;
 
 use Illuminate\Support\Facades\Validator;
 use Rutatiina\Contact\Models\Contact;
-use Rutatiina\SalesOrder\Models\Setting;
+use Rutatiina\PurchaseOrder\Models\Setting;
 
-class ValidateService
+class PurchaseOrderValidateService
 {
     public static $errors = [];
 
@@ -31,8 +31,7 @@ class ValidateService
             'date' => 'required|date',
             'base_currency' => 'required',
             'expiry_date' => 'date|nullable',
-            'salesperson_contact_id' => 'numeric|nullable',
-            'memo' => 'string|nullable',
+            'contact_notes' => 'string|nullable',
 
             'items' => 'required|array',
             'items.*.name' => 'required_without:type_id',
@@ -62,7 +61,6 @@ class ValidateService
 
 
         $contact = Contact::findOrFail($requestInstance->contact_id);
-
 
 
         $data['id'] = $requestInstance->input('id', null); //for updating the id will always be posted

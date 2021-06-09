@@ -2,37 +2,22 @@
 
 namespace Rutatiina\PurchaseOrder\Http\Controllers;
 
-use Rutatiina\PurchaseOrder\Models\Setting;
-use URL;
-use PDF;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Request as FacadesRequest;
-use Illuminate\Support\Facades\View;
 use Rutatiina\PurchaseOrder\Models\PurchaseOrder;
 use Rutatiina\FinancialAccounting\Traits\FinancialAccountingTrait;
 use Rutatiina\Contact\Traits\ContactTrait;
-use Yajra\DataTables\Facades\DataTables;
-
-use Rutatiina\PurchaseOrder\Classes\Store as TxnStore;
-use Rutatiina\PurchaseOrder\Classes\Approve as TxnApprove;
-use Rutatiina\PurchaseOrder\Classes\Read as TxnRead;
-use Rutatiina\PurchaseOrder\Classes\Copy as TxnCopy;
-use Rutatiina\PurchaseOrder\Classes\Number as TxnNumber;
-use Rutatiina\PurchaseOrder\Traits\Item as TxnItem;
-use Rutatiina\PurchaseOrder\Classes\Edit as TxnEdit;
-use Rutatiina\PurchaseOrder\Classes\Update as TxnUpdate;
+use Rutatiina\PurchaseOrder\Services\PurchaseOrderService;
 
 class PurchaseOrderController extends Controller
 {
     use FinancialAccountingTrait;
     use ContactTrait;
-    use TxnItem;
 
     // >> get the item attributes template << !!important
-
-    private $txnEntreeSlug = 'purchase-order';
 
     public function __construct()
     {
@@ -69,14 +54,6 @@ class PurchaseOrderController extends Controller
 
     }
 
-    private function nextNumber()
-    {
-        $txn = PurchaseOrder::latest()->first();
-        $settings = Setting::first();
-
-        return $settings->number_prefix . (str_pad((optional($txn)->number + 1), $settings->minimum_number_length, "0", STR_PAD_LEFT)) . $settings->number_postfix;
-    }
-
     public function create()
     {
         //load the vue version of the app
@@ -89,7 +66,7 @@ class PurchaseOrderController extends Controller
 
         $txnAttributes = (new PurchaseOrder())->rgGetAttributes();
 
-        $txnAttributes['number'] = $this->nextNumber();
+        $txnAttributes['number'] = PurchaseOrderService::nextNumber();
 
         $txnAttributes['status'] = 'approved';
         $txnAttributes['contact_id'] = '';
@@ -98,19 +75,27 @@ class PurchaseOrderController extends Controller
         $txnAttributes['base_currency'] = $tenant->base_currency;
         $txnAttributes['quote_currency'] = $tenant->base_currency;
         $txnAttributes['taxes'] = json_decode('{}');
-        $txnAttributes['isRecurring'] = false;
-        $txnAttributes['recurring'] = [
-            'date_range' => [],
-            'day_of_month' => '*',
-            'month' => '*',
-            'day_of_week' => '*',
-        ];
         $txnAttributes['contact_notes'] = null;
         $txnAttributes['terms_and_conditions'] = null;
-        $txnAttributes['items'] = [$this->itemCreate()];
+        $txnAttributes['items'] = [[
+            'selectedTaxes' => [], #required
+            'selectedItem' => json_decode('{}'), #required
+            'displayTotal' => 0,
+            'name' => '',
+            'description' => '',
+            'rate' => 0,
+            'quantity' => 1,
+            'total' => 0,
+            'taxes' => [],
 
-        unset($txnAttributes['txn_entree_id']); //!important
-        unset($txnAttributes['txn_type_id']); //!important
+            'item_id' => '',
+            'contact_id' => '',
+            'tax_id' => '',
+            'units' => '',
+            'batch' => '',
+            'expiry' => ''
+        ]];
+
         unset($txnAttributes['debit_contact_id']); //!important
         unset($txnAttributes['credit_contact_id']); //!important
 
@@ -126,16 +111,13 @@ class PurchaseOrderController extends Controller
 
     public function store(Request $request)
     {
-        $TxnStore = new TxnStore();
-        $TxnStore->txnEntreeSlug = $this->txnEntreeSlug;
-        $TxnStore->txnInsertData = $request->all();
-        $insert = $TxnStore->run();
+        $storeService = PurchaseOrderService::store($request);
 
-        if ($insert == false)
+        if ($storeService == false)
         {
             return [
                 'status' => false,
-                'messages' => $TxnStore->errors
+                'messages' => PurchaseOrderService::$errors
             ];
         }
 
@@ -143,7 +125,7 @@ class PurchaseOrderController extends Controller
             'status' => true,
             'messages' => ['Purchase Order saved'],
             'number' => 0,
-            'callback' => URL::route('purchase-orders.show', [$insert->id], false)
+            'callback' => URL::route('purchase-orders.show', [$storeService->id], false)
         ];
 
     }
@@ -156,11 +138,15 @@ class PurchaseOrderController extends Controller
             return view('l-limitless-bs4.layout_2-ltr-default.appVue');
         }
 
-        if (FacadesRequest::wantsJson())
-        {
-            $TxnRead = new TxnRead();
-            return $TxnRead->run($id);
-        }
+        $txn = PurchaseOrder::findOrFail($id);
+        $txn->load('contact', 'financial_account', 'items.taxes');
+        $txn->setAppends([
+            'taxes',
+            'number_string',
+            'total_in_words',
+        ]);
+
+        return $txn->toArray();
     }
 
     public function edit($id)
@@ -171,62 +157,69 @@ class PurchaseOrderController extends Controller
             return view('l-limitless-bs4.layout_2-ltr-default.appVue');
         }
 
-        $TxnEdit = new TxnEdit();
-        $txnAttributes = $TxnEdit->run($id);
+        $txnAttributes = PurchaseOrderService::edit($id);
 
-        $data = [
+        return [
             'pageTitle' => 'Edit Purchase order', #required
             'pageAction' => 'Edit', #required
             'txnUrlStore' => '/purchase-orders/' . $id, #required
             'txnAttributes' => $txnAttributes, #required
         ];
-
-        if (FacadesRequest::wantsJson())
-        {
-            return $data;
-        }
     }
 
     public function update(Request $request)
     {
         //print_r($request->all()); exit;
 
-        $TxnStore = new TxnUpdate();
-        $TxnStore->txnInsertData = $request->all();
-        $insert = $TxnStore->run();
+        $storeService = PurchaseOrderService::update($request);
 
-        if ($insert == false)
+        if ($storeService == false)
         {
             return [
                 'status' => false,
-                'messages' => $TxnStore->errors
+                'messages' => PurchaseOrderService::$errors
             ];
         }
 
         return [
             'status' => true,
             'messages' => ['Purchase order updated'],
-            'number' => 0,
-            'callback' => URL::route('purchase-orders.show', [$insert->id], false)
+            'callback' => URL::route('purchase-orders.show', [$storeService->id], false)
         ];
     }
 
-    public function destroy()
+    public function destroy($id)
     {
+        $destroy = PurchaseOrderService::destroy($id);
+
+        if ($destroy)
+        {
+            return [
+                'status' => true,
+                'messages' => ['Purchase order deleted'],
+                'callback' => URL::route('purchase-orders.index', [], false)
+            ];
+        }
+        else
+        {
+            return [
+                'status' => false,
+                'messages' => PurchaseOrderService::$errors
+            ];
+        }
     }
 
     #-----------------------------------------------------------------------------------
 
     public function approve($id)
     {
-        $TxnApprove = new TxnApprove();
-        $approve = $TxnApprove->run($id);
+        $approve = PurchaseOrderService::approve($id);
 
         if ($approve == false)
         {
             return [
                 'status' => false,
-                'messages' => $TxnApprove->errors
+                'messages' => PurchaseOrderService::$errors
             ];
         }
 
@@ -245,35 +238,14 @@ class PurchaseOrderController extends Controller
             return view('l-limitless-bs4.layout_2-ltr-default.appVue');
         }
 
-        $TxnCopy = new TxnCopy();
-        $txnAttributes = $TxnCopy->run($id);
+        $txnAttributes = PurchaseOrderService::copy($id);
 
-        $TxnNumber = new TxnNumber();
-        $txnAttributes['number'] = $TxnNumber->run($this->txnEntreeSlug);
-
-
-        $data = [
+        return [
             'pageTitle' => 'Copy Purchase Order', #required
             'pageAction' => 'Copy', #required
             'txnUrlStore' => '/purchase-orders', #required
             'txnAttributes' => $txnAttributes, #required
         ];
-
-        if (FacadesRequest::wantsJson())
-        {
-            return $data;
-        }
-    }
-
-    public function datatables(Request $request)
-    {
-        $txns = Transaction::setRoute('show', route('accounting.purchases.purchase-orders.show', '_id_'))
-            ->setRoute('edit', route('accounting.purchases.purchase-orders.edit', '_id_'))
-            ->setSortBy($request->sort_by)
-            ->paginate(false)
-            ->findByEntree($this->txnEntreeSlug);
-
-        return Datatables::of($txns)->make(true);
     }
 
     public function exportToExcel(Request $request)
