@@ -12,7 +12,7 @@ Route::group(['middleware' => ['web', 'auth', 'tenant', 'service.accounting']], 
 
     });
 
-    Route::resource('purchase-orders/settings', 'Rutatiina\PurchaseOrder\Http\Controllers\SettingsController');
+    Route::resource('purchase-orders/settings', 'Rutatiina\PurchaseOrder\Http\Controllers\PurchaseOrderSettingsController');
     Route::resource('purchase-orders', 'Rutatiina\PurchaseOrder\Http\Controllers\PurchaseOrderController');
 
 });

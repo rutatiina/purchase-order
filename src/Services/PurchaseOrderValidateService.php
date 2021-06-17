@@ -4,7 +4,7 @@ namespace Rutatiina\PurchaseOrder\Services;
 
 use Illuminate\Support\Facades\Validator;
 use Rutatiina\Contact\Models\Contact;
-use Rutatiina\PurchaseOrder\Models\Setting;
+use Rutatiina\PurchaseOrder\Models\PurchaseOrderSetting;
 
 class PurchaseOrderValidateService
 {
@@ -56,7 +56,7 @@ class PurchaseOrderValidateService
 
         // << data validation <<------------------------------------------------------------
 
-        $settings = Setting::has('financial_account')->with(['financial_account'])->firstOrFail();
+        $settings = PurchaseOrderSetting::has('financial_account')->with(['financial_account'])->firstOrFail();
         //Log::info($this->settings);
 
 

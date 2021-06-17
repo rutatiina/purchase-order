@@ -5,7 +5,7 @@ namespace Rutatiina\PurchaseOrder\Traits;
 use Illuminate\Support\Facades\Validator;
 use Rutatiina\Contact\Models\Contact;
 use Rutatiina\PurchaseOrder\Models\PurchaseOrder;
-use Rutatiina\PurchaseOrder\Models\Setting;
+use Rutatiina\PurchaseOrder\Models\PurchaseOrderSetting;
 use Rutatiina\FinancialAccounting\Models\Account;
 use Rutatiina\Tax\Models\Tax;
 
@@ -175,7 +175,7 @@ trait Validate
 
         // << data validation <<------------------------------------------------------------
 
-        $this->settings = Setting::with(['financial_account_to_debit', 'financial_account_to_credit'])->first();
+        $this->settings = PurchaseOrderSetting::with(['financial_account_to_debit', 'financial_account_to_credit'])->first();
 
         if (!$this->settings->financial_account_to_debit && !$this->settings->financial_account_to_credit)
         {
