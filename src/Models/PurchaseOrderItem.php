@@ -46,9 +46,14 @@ class PurchaseOrderItem extends Model
         }
     }
 
-    public function txn()
+    public function purchase_order()
     {
-        return $this->belongsTo('Rutatiina\FinancialAccounting\Models\Txn', 'txn_id');
+        return $this->belongsTo('Rutatiina\PurchaseOrder\Models\PurchaseOrder', 'purchase_order_id');
+    }
+
+    public function taxes()
+    {
+        return $this->hasMany('Rutatiina\PurchaseOrder\Models\PurchaseOrderItemTax', 'purchase_order_item_id', 'id');
     }
 
 }

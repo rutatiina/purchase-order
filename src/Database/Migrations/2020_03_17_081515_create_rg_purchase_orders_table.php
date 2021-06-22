@@ -41,6 +41,7 @@ class CreateRgPurchaseOrdersTable extends Migration
             $table->unsignedDecimal('exchange_rate', 20,10);
             $table->unsignedDecimal('taxable_amount', 20,5);
             $table->unsignedDecimal('total', 20, 5);
+            $table->boolean('balances_where_updated')->default(0);
             $table->unsignedBigInteger('branch_id')->nullable();
             $table->unsignedBigInteger('store_id')->nullable();
             $table->date('delivery_date')->nullable();

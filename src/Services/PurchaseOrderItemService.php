@@ -21,7 +21,7 @@ class PurchaseOrderItemService
         //Save the items >> $data['items']
         foreach ($data['items'] as &$item)
         {
-            $item['sales_order_id'] = $data['id'];
+            $item['purchase_order_id'] = $data['id'];
 
             $itemTaxes = (is_array($item['taxes'])) ? $item['taxes'] : [] ;
             unset($item['taxes']);
@@ -33,8 +33,8 @@ class PurchaseOrderItemService
                 //save the taxes attached to the item
                 $itemTax = new PurchaseOrderItemTax;
                 $itemTax->tenant_id = $item['tenant_id'];
-                $itemTax->sales_order_id = $item['sales_order_id'];
-                $itemTax->sales_order_item_id = $itemModel->id;
+                $itemTax->purchase_order_id = $item['purchase_order_id'];
+                $itemTax->purchase_order_item_id = $itemModel->id;
                 $itemTax->tax_code = $tax['code'];
                 $itemTax->amount = $tax['total'];
                 $itemTax->inclusive = $tax['inclusive'];

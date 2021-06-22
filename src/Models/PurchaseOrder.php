@@ -57,9 +57,6 @@ class PurchaseOrder extends Model
              $txn->comments()->each(function($row) {
                 $row->delete();
              });
-             $txn->ledgers()->each(function($row) {
-                $row->delete();
-             });
         });
 
     }
@@ -90,10 +87,8 @@ class PurchaseOrder extends Model
         $attributes['debit_account'] = [];
         $attributes['credit_account'] = [];
         $attributes['items'] = [];
-        $attributes['ledgers'] = [];
         $attributes['comments'] = [];
-        $attributes['debit_contact'] = [];
-        $attributes['credit_contact'] = [];
+        $attributes['contact'] = [];
 
         return $attributes;
     }

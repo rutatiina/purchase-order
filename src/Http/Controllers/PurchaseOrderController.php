@@ -2,7 +2,6 @@
 
 namespace Rutatiina\PurchaseOrder\Http\Controllers;
 
-use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -119,7 +118,7 @@ class PurchaseOrderController extends Controller
             'status' => true,
             'messages' => ['Purchase Order saved'],
             'number' => 0,
-            'callback' => URL::route('purchase-orders.show', [$storeService->id], false)
+            'callback' => route('purchase-orders.show', [$storeService->id], false)
         ];
 
     }
@@ -178,7 +177,7 @@ class PurchaseOrderController extends Controller
         return [
             'status' => true,
             'messages' => ['Purchase order updated'],
-            'callback' => URL::route('purchase-orders.show', [$storeService->id], false)
+            'callback' => route('purchase-orders.show', [$storeService->id], false)
         ];
     }
 
@@ -191,7 +190,7 @@ class PurchaseOrderController extends Controller
             return [
                 'status' => true,
                 'messages' => ['Purchase order deleted'],
-                'callback' => URL::route('purchase-orders.index', [], false)
+                'callback' => route('purchase-orders.index', [], false)
             ];
         }
         else
