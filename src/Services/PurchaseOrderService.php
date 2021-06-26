@@ -99,7 +99,6 @@ class PurchaseOrderService
             $Txn->document_name = $data['document_name'];
             $Txn->number = $data['number'];
             $Txn->date = $data['date'];
-            $Txn->financial_account_code = $data['financial_account_code'];
             $Txn->contact_id = $data['contact_id'];
             $Txn->contact_name = $data['contact_name'];
             $Txn->contact_address = $data['contact_address'];
@@ -125,8 +124,8 @@ class PurchaseOrderService
             //Save the items >> $data['items']
             PurchaseOrderItemService::store($data);
 
-            //check status and update financial account and contact balances accordingly
-            PurchaseOrderApprovalService::run($Txn);
+            //check status and update balances accordingly
+            PurchaseOrderBalanceService::update($Txn);
 
             DB::connection('tenant')->commit();
 
@@ -178,15 +177,12 @@ class PurchaseOrderService
 
             if ($Txn->status == 'approved')
             {
-                self::$errors[] = 'Approved Transaction cannot be not be edited';
+                self::$errors[] = 'Approved purchase order cannot be not be edited';
                 return false;
             }
 
-            //reverse the account balances
-            AccountBalanceUpdateService::singleEntry($Txn->toArray(), true);
-
-            //reverse the contact balances
-            ContactBalanceUpdateService::singleEntry($Txn->toArray(), true);
+            //reverse the balances
+            PurchaseOrderBalanceService::update($Txn, true);
 
             //Delete affected relations
             $Txn->items()->delete();
@@ -241,13 +237,8 @@ class PurchaseOrderService
                 return false;
             }
 
-            $data = $Txn->toArray();
-
-            //reverse the account balances
-            AccountBalanceUpdateService::singleEntry($data, true);
-
-            //reverse the contact balances
-            ContactBalanceUpdateService::singleEntry($data, true);
+            //reverse the balances
+            PurchaseOrderBalanceService::update($Txn, true);
 
             //Delete affected relations
             $Txn->items()->delete();
@@ -342,15 +333,13 @@ class PurchaseOrderService
             return false;
         }
 
-        $data = $Txn->toArray();
-
         //start database transaction
         DB::connection('tenant')->beginTransaction();
 
         try
         {
             $Txn->status = 'approved';
-            PurchaseOrderApprovalService::run($Txn);
+            PurchaseOrderBalanceService::update($Txn);
 
             DB::connection('tenant')->commit();
 
@@ -364,14 +353,14 @@ class PurchaseOrderService
 
             if (App::environment('local'))
             {
-                self::$errors[] = 'DB Error: Failed to approve transaction.';
+                self::$errors[] = 'DB Error: Failed to approve purchase order.';
                 self::$errors[] = 'File: ' . $e->getFile();
                 self::$errors[] = 'Line: ' . $e->getLine();
                 self::$errors[] = 'Message: ' . $e->getMessage();
             }
             else
             {
-                self::$errors[] = 'Fatal Internal Error: Failed to approve transaction. Please contact Admin';
+                self::$errors[] = 'Fatal Internal Error: Failed to approve purchase order. Please contact Admin';
             }
 
             return false;
