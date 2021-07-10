@@ -34,9 +34,6 @@ class CreateRgPurchaseOrderSettingsTable extends Migration
             $table->unsignedBigInteger('minimum_number')->default(1)->nullable();
             $table->unsignedBigInteger('maximum_number')->nullable();
 
-            //double entry settings
-            $table->unsignedBigInteger('financial_account_code')->nullable();
-
         });
     }
 

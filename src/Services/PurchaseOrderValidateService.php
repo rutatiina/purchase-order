@@ -56,12 +56,11 @@ class PurchaseOrderValidateService
 
         // << data validation <<------------------------------------------------------------
 
-        $settings = PurchaseOrderSetting::has('financial_account')->with(['financial_account'])->firstOrFail();
+        $settings = PurchaseOrderSetting::firstOrFail();
         //Log::info($this->settings);
 
 
         $contact = Contact::findOrFail($requestInstance->contact_id);
-
 
         $data['id'] = $requestInstance->input('id', null); //for updating the id will always be posted
         $data['user_id'] = $user->id;
@@ -74,7 +73,6 @@ class PurchaseOrderValidateService
         $data['number_length'] = $settings->minimum_number_length;
         $data['number_postfix'] = $settings->number_postfix;
         $data['date'] = $requestInstance->input('date');
-        $data['financial_account_code'] = $settings->financial_account->code;
         $data['contact_id'] = $requestInstance->contact_id;
         $data['contact_name'] = $contact->name;
         $data['contact_address'] = trim($contact->shipping_address_street1 . ' ' . $contact->shipping_address_street2);
