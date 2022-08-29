@@ -233,7 +233,7 @@ class PurchaseOrderService
 
             if ($Txn->status == 'approved')
             {
-                self::$errors[] = 'Approved Transaction cannot be not be deleted';
+                self::$errors[] = 'Approved Purchase order(s) cannot be not be deleted';
                 return false;
             }
 
