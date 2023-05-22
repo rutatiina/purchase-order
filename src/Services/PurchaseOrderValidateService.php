@@ -2,8 +2,9 @@
 
 namespace Rutatiina\PurchaseOrder\Services;
 
-use Illuminate\Support\Facades\Validator;
+use Rutatiina\Item\Models\Item;
 use Rutatiina\Contact\Models\Contact;
+use Illuminate\Support\Facades\Validator;
 use Rutatiina\PurchaseOrder\Models\PurchaseOrderSetting;
 
 class PurchaseOrderValidateService
@@ -112,11 +113,15 @@ class PurchaseOrderValidateService
                 $itemTaxableAmount  -= $itemTax['inclusive']; //calculate the item taxable amount more by removing the inclusive amount
             }
 
+            //get the item
+            $itemModel = Item::find($item['item_id']);
+
             $data['items'][] = [
                 'tenant_id' => $data['tenant_id'],
                 'created_by' => $data['created_by'],
                 'contact_id' => $item['contact_id'],
                 'item_id' => $item['item_id'],
+                'item_id' => optional($itemModel)->id, //$item['item_id'], use internal ID to verify data so that from here one the item_id value is LEGIT
                 'name' => $item['name'],
                 'description' => $item['description'],
                 'quantity' => $item['quantity'],

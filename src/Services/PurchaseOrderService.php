@@ -2,15 +2,16 @@
 
 namespace Rutatiina\PurchaseOrder\Services;
 
-use Illuminate\Support\Facades\App;
-use Illuminate\Support\Facades\Auth;
+use Rutatiina\Tax\Models\Tax;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use Rutatiina\PurchaseOrder\Models\PurchaseOrder;
+use Rutatiina\PurchaseOrder\Models\PurchaseOrderSetting;
+use Rutatiina\FinancialAccounting\Services\ItemBalanceUpdateService;
 use Rutatiina\FinancialAccounting\Services\AccountBalanceUpdateService;
 use Rutatiina\FinancialAccounting\Services\ContactBalanceUpdateService;
-use Rutatiina\PurchaseOrder\Models\PurchaseOrderSetting;
-use Rutatiina\Tax\Models\Tax;
 
 class PurchaseOrderService
 {
@@ -185,6 +186,9 @@ class PurchaseOrderService
             //reverse the balances
             PurchaseOrderBalanceService::update($Txn, true);
 
+            //Update the item balances
+            ItemBalanceUpdateService::entry($Txn, true);
+
             //Delete affected relations
             $Txn->items()->delete();
             $Txn->item_taxes()->delete();
@@ -240,6 +244,9 @@ class PurchaseOrderService
 
             //reverse the balances
             PurchaseOrderBalanceService::update($Txn, true);
+
+            //Update the item balances
+            ItemBalanceUpdateService::entry($Txn, true);
 
             //Delete affected relations
             $Txn->items()->delete();

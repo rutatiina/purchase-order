@@ -2,6 +2,7 @@
 
 namespace Rutatiina\PurchaseOrder\Services;
 
+use Rutatiina\FinancialAccounting\Services\ItemBalanceUpdateService;
 use Rutatiina\FinancialAccounting\Services\AccountBalanceUpdateService;
 use Rutatiina\FinancialAccounting\Services\ContactBalanceUpdateService;
 
@@ -29,6 +30,9 @@ trait PurchaseOrderApprovalService
 
         //Update the contact balances
         ContactBalanceUpdateService::singleEntry($txn);
+
+        //Update the item balances
+        ItemBalanceUpdateService::entry($txn);
 
         $txn->status = 'approved';
         $txn->balances_where_updated = 1;
